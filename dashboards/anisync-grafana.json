@@ -1,0 +1,49 @@
+{
+  "title": "anisync Overview",
+  "tags": ["anisync", "locks"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Lock Acquire Rate (by success)",
+      "gridPos": { "h": 9, "w": 18, "x": 0, "y": 0 },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(anisync_lock_acquire_total[5m])",
+          "legendFormat": "success={{success}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Locks Held",
+      "gridPos": { "h": 9, "w": 6, "x": 18, "y": 0 },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "refId": "B",
+          "expr": "anisync_locks_held"
+        }
+      ]
+    }
+  ],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" }
+}
+
+

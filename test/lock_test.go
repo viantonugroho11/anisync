@@ -2,6 +2,8 @@ package test
 
 import (
 	"anisync"
+	redisbackend "anisync/backends/redis"
+	"anisync/options"
 	"context"
 	"testing"
 	"time"
@@ -22,7 +24,8 @@ func TestAcquireAndRelease(t *testing.T) {
 	rdb := newRedis(t)
 	ctx := context.Background()
 
-	lock, err := anisync.Acquire(ctx, rdb, "test-lock")
+	backend := redisbackend.New(rdb)
+	lock, err := backend.Acquire(ctx, "test-lock")
 	assert.NoError(t, err)
 	assert.NotNil(t, lock)
 
@@ -34,10 +37,11 @@ func TestTryAcquireFail(t *testing.T) {
 	rdb := newRedis(t)
 	ctx := context.Background()
 
-	_, err := anisync.Acquire(ctx, rdb, "lock")
+	backend := redisbackend.New(rdb)
+	_, err := backend.Acquire(ctx, "lock")
 	assert.NoError(t, err)
 
-	_, err = anisync.TryAcquire(ctx, rdb, "lock")
+	_, err = backend.TryAcquire(ctx, "lock")
 	assert.ErrorIs(t, err, anisync.ErrLockAlreadyHeld)
 }
 
@@ -45,17 +49,13 @@ func TestAutoExpire(t *testing.T) {
 	rdb := newRedis(t)
 	ctx := context.Background()
 
-	_, err := anisync.Acquire(
-		ctx,
-		rdb,
-		"expire-lock",
-		anisync.WithTTL(100*time.Millisecond),
-	)
+	backend := redisbackend.New(rdb)
+	_, err := backend.Acquire(ctx, "expire-lock", options.WithTTL(100*time.Millisecond))
 	assert.NoError(t, err)
 
 	time.Sleep(200 * time.Millisecond)
 
-	lock, err := anisync.TryAcquire(ctx, rdb, "expire-lock")
+	lock, err := backend.TryAcquire(ctx, "expire-lock")
 	assert.NoError(t, err)
 
 	_ = lock.Release(ctx)

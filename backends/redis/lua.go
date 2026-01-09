@@ -1,7 +1,10 @@
-package anisync
+package redisbackend
 
 import (
 	"context"
+
+	"anisync"
+	"anisync/metrics"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -15,19 +18,14 @@ return 0
 
 func (l *Lock) Release(ctx context.Context) error {
 	close(l.stop)
-
-	res, err := releaseScript.Run(
-		ctx,
-		l.rdb,
-		[]string{l.key},
-		l.value,
-	).Int()
-
+	res, err := releaseScript.Run(ctx, l.rdb, []string{l.key}, l.value).Int()
 	if err != nil {
 		return err
 	}
 	if res == 0 {
-		return ErrLockNotHeld
+		metrics.RecordRelease(false)
+		return anisync.ErrLockNotHeld
 	}
+	metrics.RecordRelease(true)
 	return nil
 }
